@@ -1,0 +1,32 @@
+# Secrets and environment files
+.env
+.env.*
+!.env.example
+
+# Private keys and certificates
+*.key
+*.pem
+*.p12
+*.pfx
+id_*
+*_key
+*_key.*
+*.ovpn
+
+# Credentials and service accounts
+secrets/
+credentials/
+service-account*.json
+firebase-service-account*.json
+
+# Runtime data
+data/
+volumes/
+backups/
+*.log
+
+# OS/editor files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
