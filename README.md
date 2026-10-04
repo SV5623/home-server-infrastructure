@@ -670,9 +670,9 @@ These files represent the current Portainer stack configuration but are consider
 
 ---
 
-# Docker Compose projects
+# Docker Stacks
 
-The infrastructure currently contains Compose definitions for:
+The infrastructure currently contains the following Portainer-managed stacks:
 
 ```text
 caddy
@@ -912,24 +912,39 @@ The repository is intended to contain:
 ```text
 home-server-infrastructure/
 ├── README.md
-├── docker/
+├── README_UA.md
+│
+├── stacks/
 │   ├── caddy/
+│   ├── pihole/
 │   ├── monitoring/
 │   ├── jellyfin/
+│   ├── crafty/
 │   ├── immich/
 │   ├── homepage/
 │   ├── uptime-kuma/
-│   ├── pihole/
-│   ├── portainer/
-│   ├── crafty/
 │   ├── snapotter/
 │   ├── docker-socket-proxy/
 │   ├── glances/
 │   ├── obsidian/
-│   └── minecraft/
+│   ├── minecraft/
+│   ├── portainer/
+│   └── typing-svg/
+│
+├── infrastructure/
+│   ├── network/
+│   └── scripts/
+│
 └── docs/
-    └── ...
+    ├── storage.md
+    ├── backup.md
+    └── recovery.md
 ```
+
+Each directory under stacks/ represents an independent deployment unit.
+Stacks are deployed and managed through Portainer using the Git repository as the source of the Compose configuration.
+Infrastructure documentation and host-level configuration are kept separately from the Docker Stack definitions.
+Persistent runtime data, databases, credentials and other secrets are not stored in Git
 
 The repository contains sanitized configuration and documentation.
 

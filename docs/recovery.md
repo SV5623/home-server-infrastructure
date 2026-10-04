@@ -11,22 +11,21 @@ The goal is to recreate the Docker infrastructure from the repository and restor
 The recommended recovery sequence is:
 
 ```text
-1. Install Fedora Linux
+1. Install Fedora
 2. Configure networking
-3. Configure SSH
-4. Install Docker
-5. Install Docker Compose
-6. Create the external Docker network `server`
-7. Configure Tailscale
-8. Configure firewalld
-9. Restore application data
-10. Deploy infrastructure stacks
-11. Configure Pi-hole
-12. Deploy Caddy
-13. Deploy remaining services
-14. Verify DNS
-15. Verify reverse proxy
-16. Verify service availability
+3. Install Docker
+4. Install Portainer
+5. Create external Docker network `server`
+6. Configure Tailscale
+7. Configure firewalld
+8. Configure SMB mounts
+9. Connect Portainer to the Git repository
+10. Deploy required Stacks
+11. Restore persistent application data
+12. Restore secrets / environment variables
+13. Verify Pi-hole
+14. Verify Caddy
+15. Verify remaining services
 ```
 
 ---

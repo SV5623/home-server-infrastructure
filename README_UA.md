@@ -627,9 +627,9 @@ Compose-файли, керовані Portainer, зберігаються:
 
 ---
 
-# Docker Compose проєкти
+# Docker Stacks
 
-Поточна інфраструктура містить Compose-конфігурації для:
+Поточна інфраструктура містить такі Portainer-managed stacks:
 
 ```text
 caddy
@@ -869,23 +869,33 @@ curl http://192.168.0.105:<port>
 ```text
 home-server-infrastructure/
 ├── README.md
-├── docker/
+├── README_UA.md
+│
+├── stacks/
 │   ├── caddy/
+│   ├── pihole/
 │   ├── monitoring/
 │   ├── jellyfin/
+│   ├── crafty/
 │   ├── immich/
 │   ├── homepage/
 │   ├── uptime-kuma/
-│   ├── pihole/
-│   ├── portainer/
-│   ├── crafty/
 │   ├── snapotter/
 │   ├── docker-socket-proxy/
 │   ├── glances/
 │   ├── obsidian/
-│   └── minecraft/
+│   ├── minecraft/
+│   ├── portainer/
+│   └── typing-svg/
+│
+├── infrastructure/
+│   ├── network/
+│   └── scripts/
+│
 └── docs/
-    └── ...
+    ├── storage.md
+    ├── backup.md
+    └── recovery.md
 ```
 
 Репозиторій містить санітизовану конфігурацію та документацію.

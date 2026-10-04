@@ -25,26 +25,25 @@ id_*
 authorized_keys
 
 # =========================
-# Runtime data
+# Runtime databases & logs
 # =========================
 
 *.db
 *.db-shm
 *.db-wal
-
 *.log
 
 # =========================
-# Application data
+# Application / persistent data
 # =========================
+
+# Generic runtime data
+data/
+cache/
 
 # Immich
 stacks/immich/library/
 stacks/immich/postgres/
-
-# Jellyfin
-stacks/jellyfin/data/
-stacks/jellyfin/cache/
 
 # Crafty
 stacks/crafty/servers/
@@ -60,24 +59,14 @@ stacks/minecraft/data/
 stacks/obsidian/vaults/
 stacks/obsidian/config/
 
-# Pi-hole runtime data
+# Pi-hole
 stacks/pihole/etc-pihole/
 
-# Uptime Kuma runtime data
+# Uptime Kuma
 stacks/uptime-kuma/data/
 
-# =========================
-# Portainer runtime data
-# =========================
-
+# Portainer
 stacks/portainer/data/
-
-# =========================
-# Docker / volumes
-# =========================
-
-docker-data/
-volumes/
 
 # =========================
 # Temporary / local files
