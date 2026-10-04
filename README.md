@@ -45,7 +45,6 @@ home-server-infrastructure/
 │   ├── docker-socket-proxy/
 │   ├── glances/
 │   ├── obsidian/
-│   ├── minecraft/
 │   ├── portainer/
 │   └── typing-svg/
 └── .gitignore
@@ -616,7 +615,7 @@ Configuration:
 
 # Minecraft
 
-Minecraft infrastructure is handled through Crafty Controller and a separate Minecraft Compose project.
+Minecraft infrastructure is managed through Crafty Controller.
 
 Crafty provides:
 
@@ -687,7 +686,6 @@ snapotter
 docker-socket-proxy
 glances
 obsidian
-minecraft
 typing-svg
 ```
 

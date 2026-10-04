@@ -251,7 +251,6 @@ networks:
 |---|---|
 | Homepage | Центральна панель сервісів |
 | Crafty Controller | Керування Minecraft-серверами |
-| Minecraft | Minecraft-сервер |
 | Typing SVG | Власний сервіс для README з ефектом друку |
 
 ---
@@ -574,7 +573,7 @@ cadvisor:8080
 
 # Minecraft
 
-Minecraft-інфраструктура працює через Crafty Controller та окремий Minecraft Compose-проєкт.
+Minecraft-інфраструктура працює через Crafty Controller.
 
 Crafty забезпечує:
 

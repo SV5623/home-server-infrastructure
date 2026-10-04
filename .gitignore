@@ -52,9 +52,6 @@ stacks/crafty/logs/
 stacks/crafty/config/
 stacks/crafty/import/
 
-# Minecraft
-stacks/minecraft/data/
-
 # Obsidian
 stacks/obsidian/vaults/
 stacks/obsidian/config/
