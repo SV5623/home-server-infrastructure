@@ -8,8 +8,8 @@ services:
       HOMEPAGE_ALLOWED_HOSTS: home.home.arpa
 
     volumes:
-      - /home/s623/docker/homepage/config:/app/config:Z
-      - /home/s623/docker/homepage/config/images:/app/public/images:ro
+      - ./config:/app/config:Z
+      - ./config/images:/app/public/images:ro
 
     networks:
       - server
