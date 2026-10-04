@@ -1,0 +1,63 @@
+{
+    admin localhost:2019
+}
+
+jellyfin.home.arpa {
+    reverse_proxy jellyfin:8096
+}
+
+grafana.home.arpa {
+    reverse_proxy grafana:3000
+}
+
+prometheus.home.arpa {
+    reverse_proxy prometheus:9090
+}
+
+pihole.home.arpa {
+    reverse_proxy pihole:80
+}
+
+immich.home.arpa {
+    reverse_proxy immich-server:2283
+}
+
+portainer.home.arpa {
+    reverse_proxy portainer:9000
+}
+
+crafty.home.arpa {
+    reverse_proxy https://crafty:8443 {
+        transport http {
+            tls_insecure_skip_verify
+        }
+
+        header_up Host {host}
+        header_up X-Forwarded-Proto {scheme}
+        header_up X-Forwarded-For {remote}
+    }
+}
+
+home.home.arpa {
+    reverse_proxy homepage:3000
+}
+
+uptime.home.arpa {
+    reverse_proxy uptime-kuma:3001
+}
+
+snapotter.home.arpa {
+    reverse_proxy snapotter:1349
+}
+
+glances.home.arpa {
+    reverse_proxy glances:61208
+}
+
+typing.home.arpa {
+    reverse_proxy typing-svg:8000
+}
+
+obsidian.home.arpa {
+    reverse_proxy obsidian:8080
+}

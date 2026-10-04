@@ -1,55 +1,175 @@
 # Home Server Infrastructure
 
-Documentation and configuration notes for my home server.
+This repository is the Git-based source of truth for the home server. It is designed around the deployment flow:
 
-## Overview
+```text
+Git repository
+      ↓
+Portainer
+      ↓
+Docker Stacks
+      ↓
+Home server
+```
 
-The server runs Fedora Linux and hosts multiple services using Docker Compose.
+Each service is organized in its own stack directory under `stacks/` and can be deployed independently through Portainer.
 
-### Main access methods
+The server is a Dell Inspiron 3583 running Fedora Linux 43 and Docker. It hosts personal services, media services, monitoring, network services, Minecraft infrastructure and internal web applications.
 
-| Method | Address |
-|---|---|
-| Local network | `192.168.0.105` |
-| Tailscale | `100.81.82.102` |
-| SSH | `22/tcp` |
-| Reverse proxy | Caddy |
-| Local DNS | Pi-hole |
-| Container management | Portainer |
+The infrastructure is designed primarily for **local network and private VPN access** and does not rely on exposing internal services directly to the public Internet.
 
 ---
 
-## Network
+## Repository layout
 
-The server has two main ways to access services.
+```text
+home-server-infrastructure/
+├── README.md
+├── docs/
+│   ├── backup.md
+│   ├── recovery.md
+│   └── storage.md
+├── infrastructure/
+│   ├── network/
+│   └── scripts/
+├── stacks/
+│   ├── caddy/
+│   ├── pihole/
+│   ├── monitoring/
+│   ├── jellyfin/
+│   ├── crafty/
+│   ├── immich/
+│   ├── homepage/
+│   ├── uptime-kuma/
+│   ├── snapotter/
+│   ├── docker-socket-proxy/
+│   ├── glances/
+│   ├── obsidian/
+│   ├── minecraft/
+│   ├── portainer/
+│   └── typing-svg/
+└── .gitignore
+```
+
+The stack directories are the deployment units. The repository keeps documentation and infrastructure references, while runtime data and secrets remain on the host or in external backups.
+
+---
+
+## Overview
+
+### Server
+
+| Component | Details |
+|---|---|
+| Hardware | Dell Inspiron 3583 |
+| OS | Fedora Linux 43 Workstation |
+| Architecture | x86-64 |
+| Container runtime | Docker 29.6.2 |
+| Docker Compose | 5.3.1 |
+| Container networking | Docker bridge networks |
+| Main Docker network | `server` |
+| Firewall | firewalld |
+| VPN | Tailscale |
+| DNS | Pi-hole |
+| Reverse proxy | Caddy |
+| Container management | Portainer |
+
+The primary Docker workspace is:
+
+```text
+/home/s623/docker
+```
+
+---
+
+## Architecture
+
+The server is built around several layers:
+
+```text
+                         ┌─────────────────────┐
+                         │      Internet       │
+                         └──────────┬──────────┘
+                                    │
+                              Tailscale VPN
+                                    │
+                         ┌──────────▼──────────┐
+                         │       Server        │
+                         │   Fedora Linux      │
+                         └──────────┬──────────┘
+                                    │
+                     ┌──────────────┼──────────────┐
+                     │              │              │
+                  Pi-hole        Caddy         Docker
+                     │              │              │
+                  DNS only     Reverse Proxy    Containers
+                                    │
+                              Docker network
+                                `server`
+```
+
+The server provides:
+
+- local DNS resolution through Pi-hole;
+- private remote access through Tailscale;
+- reverse proxy through Caddy;
+- containerized services through Docker;
+- centralized container management through Portainer;
+- monitoring through Prometheus, Grafana, cAdvisor and Node Exporter.
+
+---
+
+# Network
+
+The server has two primary access paths.
 
 ### Local network
 
 ```text
-192.168.0.105:<port>
+192.168.0.105
+```
+
+Services that are published on the host can be accessed directly through the local network.
+
+Example:
+
+```text
+http://192.168.0.105:<port>
 ```
 
 ### Tailscale
 
 ```text
-100.81.82.102:<port>
+100.81.82.102
 ```
 
-Tailscale allows remote access to the server without exposing services directly to the public internet.
+Tailscale provides private VPN connectivity to the server from authorized devices.
+
+Example:
+
+```text
+http://100.81.82.102:<port>
+```
+
+Tailscale is used instead of exposing administrative and internal services directly to the public Internet.
 
 ---
 
-## Local DNS and Caddy
+# DNS
 
-Pi-hole provides local DNS records.
+Pi-hole is used as the local DNS server and network-wide DNS filter.
+
+The server provides local DNS records under:
+
+```text
+.home.arpa
+```
 
 Example:
 
 ```text
 portainer.home.arpa → 192.168.0.105
 ```
-
-The `.home.arpa` domain is used for local home-network services.
 
 ### Local service hostnames
 
@@ -63,289 +183,300 @@ portainer.home.arpa
 crafty.home.arpa
 home.home.arpa
 uptime.home.arpa
+snapotter.home.arpa
+glances.home.arpa
+typing.home.arpa
+obsidian.home.arpa
 ```
-
-### Request flow
-
-```text
-Browser
-   │
-   ▼
-Pi-hole DNS
-   │
-   └── service.home.arpa → 192.168.0.105
-                              │
-                              ▼
-                         Caddy :443
-                              │
-                              ▼
-                   Reverse proxy by hostname
-                              │
-                              ▼
-                       Docker container
-```
-
-Pi-hole resolves the hostname to the server IP.
-
-Caddy then checks the requested hostname and forwards the request to the corresponding Docker container and port.
-
-Example:
-
-```caddyfile
-portainer.home.arpa {
-    reverse_proxy portainer:9000
-}
-```
-
-This means that requests to `portainer.home.arpa` are forwarded to the Portainer container on port `9000`.
 
 ---
 
-## Main services
+# Request flow
+
+For services exposed through Caddy, the normal request flow is:
+
+```text
+Client
+  │
+  ▼
+Pi-hole DNS
+  │
+  └── service.home.arpa
+          │
+          ▼
+    192.168.0.105
+          │
+          ▼
+       Caddy
+       :443
+          │
+          ▼
+   Reverse proxy
+          │
+          ▼
+ Docker container
+```
+
+For example:
+
+```text
+grafana.home.arpa
+        │
+        ▼
+192.168.0.105
+        │
+        ▼
+Caddy
+        │
+        ▼
+grafana:3000
+```
+
+Containers connected to the same Docker network communicate using Docker container/service names instead of the server IP.
+
+---
+
+# Docker networking
+
+A shared external Docker bridge network is used:
+
+```text
+server
+```
+
+Containers that need to communicate with Caddy or other internal services are connected to this network.
+
+Example:
+
+```yaml
+networks:
+  server:
+    external: true
+```
+
+The server also has several Compose-specific networks for isolated projects.
+
+---
+
+# Services
+
+## Infrastructure
 
 | Service | Purpose |
 |---|---|
-| Fedora Linux | Operating system |
+| Fedora Linux | Host operating system |
 | Docker | Container runtime |
 | Docker Compose | Container orchestration |
-| Portainer | Docker management UI |
+| Portainer | Docker management |
 | Caddy | Reverse proxy |
-| Pi-hole | Local DNS and network-wide DNS filtering |
-| Tailscale | Remote private network access |
-| Jellyfin | Media server |
-| Immich | Photo and video management |
-| Grafana | Metrics and telemetry visualization |
+| Tailscale | Private VPN access |
+| Pi-hole | DNS and DNS filtering |
+
+## Monitoring
+
+| Service | Purpose |
+|---|---|
 | Prometheus | Metrics collection |
-| Uptime Kuma | Service monitoring |
+| Grafana | Metrics visualization |
+| Node Exporter | Host metrics |
+| cAdvisor | Container metrics |
+| Glances | System monitoring |
+| Uptime Kuma | Service availability monitoring |
+
+## Media and storage
+
+| Service | Purpose |
+|---|---|
+| Jellyfin | Media streaming |
+| Immich | Photo and video management |
+| Snapotter | Screenshot/image service |
+| Obsidian Remote | Remote Obsidian environment |
+
+## Other services
+
+| Service | Purpose |
+|---|---|
+| Homepage | Central service dashboard |
 | Crafty Controller | Minecraft server management |
-| Homepage | Service dashboard |
+| Minecraft | Minecraft server |
+| Typing SVG | Self-hosted README typing service |
 
 ---
 
-## Docker Compose projects
+# Reverse Proxy
 
-Current Compose projects:
+Caddy is the main reverse proxy.
 
-```text
-caddy
-crafty
-homepage
-immich
-jellyfin
-kuma
-monitoring
-pihole
-portainer
-```
-
-List running containers:
-
-```bash
-docker ps
-```
-
-List Compose projects:
-
-```bash
-docker compose ls
-```
-
----
-
-## Docker ports
-
-Docker Compose port format:
+It listens on:
 
 ```text
-HOST_PORT:CONTAINER_PORT
+80/tcp
+443/tcp
 ```
 
-Example:
-
-```yaml
-ports:
-  - "8080:8080"
-```
-
-This maps port `8080` on the host to port `8080` inside the container.
-
-The service can then be accessed through:
+The Caddy configuration is stored at:
 
 ```text
-http://192.168.0.105:8080
-http://100.81.82.102:8080
+/home/s623/docker/caddy/Caddyfile
 ```
 
-provided that:
-
-- the container is running;
-- the port is published by Docker;
-- the firewall allows the connection;
-- the service is listening on the expected port.
-
-### Example
-
-```yaml
-services:
-  backend:
-    ports:
-      - "8080:8080"
-
-  pgadmin:
-    ports:
-      - "5050:80"
-```
-
-Access:
+### Current routes
 
 ```text
-Backend: http://192.168.0.105:8080
-Backend: http://100.81.82.102:8080
+jellyfin.home.arpa   → jellyfin:8096
+grafana.home.arpa    → grafana:3000
+prometheus.home.arpa → prometheus:9090
+pihole.home.arpa     → pihole:80
+immich.home.arpa     → immich-server:2283
+portainer.home.arpa  → portainer:9000
+crafty.home.arpa     → crafty:8443
+home.home.arpa       → homepage:3000
+uptime.home.arpa     → uptime-kuma:3001
+snapotter.home.arpa  → snapotter:1349
+glances.home.arpa    → glances:61208
+typing.home.arpa     → typing-svg:8000
+obsidian.home.arpa   → obsidian:8080
+```
 
-pgAdmin: http://192.168.0.105:5050
-pgAdmin: http://100.81.82.102:5050
+Caddy communicates with the containers through the shared `server` Docker network.
+
+The Caddy administration API is bound only to:
+
+```text
+localhost:2019
 ```
 
 ---
 
-## Development port range
+# Publicly published host ports
 
-The firewall allows the following development port range:
+Only a subset of the container ports are published directly on the host.
+
+### SSH
+
+```text
+22/tcp
+```
+
+Used for server administration.
+
+### Pi-hole DNS
+
+```text
+192.168.0.105:53/tcp
+192.168.0.105:53/udp
+```
+
+Used as the network DNS server.
+
+### Caddy
+
+```text
+0.0.0.0:80/tcp
+0.0.0.0:443/tcp
+```
+
+Used for HTTP/HTTPS reverse proxy access.
+
+### Crafty
+
+```text
+192.168.0.105:8443/tcp
+0.0.0.0:25565/tcp
+```
+
+`8443` is the Crafty web interface.
+
+`25565` is used for Minecraft server access.
+
+Other container ports such as:
+
+```text
+3000
+8096
+9090
+9000
+3001
+61208
+8080
+```
+
+are normally **internal Docker ports** and are accessed through Caddy rather than published directly on the host.
+
+---
+
+# Firewall
+
+The server uses `firewalld`.
+
+Active zones include:
+
+```text
+FedoraWorkstation
+docker
+tailscale
+```
+
+### Local network
+
+Interfaces:
+
+```text
+enp2s0
+wlp3s0
+```
+
+### Docker
+
+Docker bridge interfaces are assigned to the Docker firewall zone.
+
+### Tailscale
+
+```text
+tailscale0
+```
+
+---
+
+## Open development port range
+
+The firewall currently allows:
 
 ```text
 2500-8900/tcp
 2500-8900/udp
 ```
 
-This makes it possible to run different projects without adding a new firewall rule for every individual port.
+on the main server and Tailscale firewall zones.
 
-For example:
+This allows development services to use ports inside this range without creating a separate firewall rule for every application.
 
-```text
-8080  → backend
-5050  → pgAdmin
-5173  → frontend
-7000  → another service
-8000  → another application
-```
+Opening a firewall port does **not** automatically publish a Docker service.
 
-Opening a firewall port does not automatically expose a service. A service must also publish that port through Docker Compose or listen directly on the host.
+A service must also:
+
+1. publish the port through Docker, or
+2. listen directly on the host.
 
 ---
 
-## Firewall
+# SSH
 
-The server uses `firewalld`.
+SSH is used for administration.
 
-### Active zones
-
-```text
-FedoraWorkstation
-  interfaces:
-    wlp3s0
-    enp2s0
-
-docker
-  interfaces:
-    Docker bridge interfaces
-
-tailscale
-  interface:
-    tailscale0
-```
-
-### Firewall zones
-
-- `FedoraWorkstation` — local network interfaces.
-- `docker` — Docker bridge interfaces.
-- `tailscale` — Tailscale interface.
-
-### Show active zones
-
-```bash
-sudo firewall-cmd --get-active-zones
-```
-
-### Show firewall configuration
-
-```bash
-sudo firewall-cmd --zone=FedoraWorkstation --list-all
-sudo firewall-cmd --zone=tailscale --list-all
-```
-
-### Reload firewall
-
-```bash
-sudo firewall-cmd --reload
-```
-
-### Development TCP ports
-
-```bash
-sudo firewall-cmd --permanent \
-  --zone=FedoraWorkstation \
-  --add-port=2500-8900/tcp
-
-sudo firewall-cmd --permanent \
-  --zone=tailscale \
-  --add-port=2500-8900/tcp
-```
-
-### Development UDP ports
-
-```bash
-sudo firewall-cmd --permanent \
-  --zone=FedoraWorkstation \
-  --add-port=2500-8900/udp
-
-sudo firewall-cmd --permanent \
-  --zone=tailscale \
-  --add-port=2500-8900/udp
-```
-
-### Apply changes
-
-```bash
-sudo firewall-cmd --reload
-```
-
-### Check allowed ports
-
-```bash
-sudo firewall-cmd --zone=FedoraWorkstation --list-ports
-sudo firewall-cmd --zone=tailscale --list-ports
-```
-
-### Security notes
-
-- The development port range is intended for LAN and Tailscale access.
-- No router port forwarding should be configured for this range.
-- Docker-published ports must be reviewed before exposing new services.
-- Internal services such as PostgreSQL and Redis should not be published unless remote access is required.
-- Firewall rules do not replace application-level authentication.
-- Docker manages its own networking and NAT rules, so published Docker ports should be checked separately.
-
----
-
-## SSH
-
-SSH is used for remote server administration.
-
-### Access through LAN
+### Local network
 
 ```bash
 ssh s623@192.168.0.105
 ```
 
-### Access through Tailscale
+### Tailscale
 
 ```bash
 ssh s623@100.81.82.102
 ```
 
-### SSH hardening
-
-The SSH hardening configuration is stored in:
+SSH hardening configuration:
 
 ```text
 /etc/ssh/sshd_config.d/99-hardening.conf
@@ -360,446 +491,446 @@ PubkeyAuthentication yes
 PermitRootLogin no
 ```
 
-This means:
-
-- password authentication is disabled;
-- keyboard-interactive authentication is disabled;
-- public-key authentication is enabled;
-- root login through SSH is disabled.
-
-### Validate SSH configuration
-
-```bash
-sudo sshd -t
-```
-
-### Reload SSH
-
-```bash
-sudo systemctl reload sshd
-```
-
-### Check SSH port
-
-```bash
-sudo ss -ltnp | grep ':22'
-```
-
-### Security notes
-
-SSH access requires a configured public key.
-
-Before changing SSH configuration, verify that a second SSH session works correctly. Do not close the only working session until the new configuration has been tested.
+SSH therefore uses public-key authentication and does not permit root login.
 
 ---
 
-## Useful Docker commands
+# Storage
 
-### List containers
+The main Docker data directory is:
 
-```bash
-docker ps
+```text
+/home/s623/docker
 ```
 
-Show all containers, including stopped ones:
+Persistent application data is stored using a combination of:
 
-```bash
-docker ps -a
+- bind mounts;
+- Docker named volumes;
+- dedicated service directories.
+
+Examples:
+
+```text
+/home/s623/docker/immich/library
+/home/s623/docker/immich/postgres
+/home/s623/docker/pihole/etc-pihole
+/home/s623/docker/homepage/config
+/home/s623/docker/uptime-kuma
+/home/s623/docker/crafty
 ```
 
-### List Compose projects
+Some services use Docker named volumes, for example:
 
-```bash
-docker compose ls
-```
-
-### Show project status
-
-```bash
-docker compose ps
-```
-
-### Start a project
-
-```bash
-docker compose up -d
-```
-
-### Stop a project
-
-```bash
-docker compose down
-```
-
-### Restart a project
-
-```bash
-docker compose up -d
-```
-
-### View logs
-
-```bash
-docker compose logs -f
-```
-
-View logs for one service:
-
-```bash
-docker compose logs -f backend
-```
-
-### Restart one service
-
-```bash
-docker compose restart backend
-```
-
-### Inspect a container
-
-```bash
-docker inspect <container_name>
-```
-
-### Show published ports
-
-```bash
-docker ps --format "table {{.Names}}\t{{.Ports}}"
-```
-
-### Show Docker networks
-
-```bash
-docker network ls
-```
-
-### Inspect a Docker network
-
-```bash
-docker network inspect <network_name>
+```text
+caddy_caddy_data
+caddy_caddy_config
+immich_model-cache
+jellyfin_jellyfin-cache
+jellyfin_jellyfin-config
+monitoring_grafana-data
+monitoring_prometheus-data
+snapotter_snapotter-data
 ```
 
 ---
 
-## Local full-stack development project
+# External storage
 
-The local full-stack project contains:
+The server mounts network storage from another machine through SMB/CIFS.
 
-- PostgreSQL;
-- backend;
-- Grafana LGTM stack;
-- pgAdmin;
-- optional frontend.
-
-### Services and ports
-
-| Service | Host port | Container port |
-|---|---:|---:|
-| PostgreSQL | 5432 | 5432 |
-| Backend | 8080 | 8080 |
-| Grafana/LGTM | 3000 | 3000 |
-| OTLP gRPC | 4317 | 4317 |
-| OTLP HTTP | 4318 | 4318 |
-| pgAdmin | 5050 | 80 |
-
-### Example Compose configuration
-
-```yaml
-services:
-  postgres:
-    image: postgres:18.4-alpine
-    environment:
-      POSTGRES_USER: app
-      POSTGRES_PASSWORD: app
-      POSTGRES_DB: app
-    ports:
-      - "5432:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U app -d app"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
-
-  backend:
-    build: ./app
-    ports:
-      - "8080:8080"
-    environment:
-      PORT: "8080"
-      DATABASE_URL: postgres://app:app@postgres:5432/app?sslmode=disable
-      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:5173}
-      TELEMETRY_ENABLED: ${TELEMETRY_ENABLED:-true}
-      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-http://lgtm:4317}
-    depends_on:
-      postgres:
-        condition: service_healthy
-      lgtm:
-        condition: service_started
-
-  lgtm:
-    image: grafana/otel-lgtm:latest
-    ports:
-      - "3000:3000"
-      - "4317:4317"
-      - "4318:4318"
-    volumes:
-      - lgtm_data:/data
-
-  pgadmin:
-    image: dpage/pgadmin4:9.17
-    ports:
-      - "5050:80"
-    environment:
-      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL:-admin@gmail.com}
-      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD:-admin}
-      PGADMIN_CONFIG_SERVER_MODE: "False"
-      PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED: "False"
-    depends_on:
-      postgres:
-        condition: service_healthy
-
-volumes:
-  postgres_data:
-  lgtm_data:
-```
-
-### Direct access
+### Movies
 
 ```text
-Backend:
-http://192.168.0.105:8080
-http://100.81.82.102:8080
-
-pgAdmin:
-http://192.168.0.105:5050
-http://100.81.82.102:5050
-
-Grafana:
-http://192.168.0.105:3000
-http://100.81.82.102:3000
+/mnt/movies
 ```
 
-### Docker-internal access
-
-Containers in the same Compose network should use the service name instead of the host IP.
-
-Example:
+Source:
 
 ```text
-postgres:5432
+//192.168.0.103/Movies
 ```
 
-The backend connects to PostgreSQL using:
+Mounted read-only.
+
+### Music
 
 ```text
-postgres://app:app@postgres:5432/app?sslmode=disable
+/mnt/music
 ```
 
-Publishing PostgreSQL with:
+Source:
 
-```yaml
-ports:
-  - "5432:5432"
+```text
+//192.168.0.103/Music
 ```
 
-is only necessary if PostgreSQL must be accessed directly from another machine.
+Mounted read-write.
 
-If only the backend and pgAdmin need database access, PostgreSQL can remain internal:
+Jellyfin uses these mounts as media libraries.
 
-```yaml
-postgres:
-  # No ports section required
+---
+
+# Monitoring
+
+The monitoring stack consists of:
+
+```text
+Node Exporter
+       │
+       ▼
+  Prometheus
+       │
+       ├── Node metrics
+       └── cAdvisor metrics
+              │
+              ▼
+           Grafana
+```
+
+Prometheus collects:
+
+```text
+node-exporter:9100
+cadvisor:8080
+```
+
+Scraping interval:
+
+```text
+60 seconds
+```
+
+Prometheus data retention:
+
+```text
+15 days
+```
+
+Configuration:
+
+```text
+/home/s623/docker/prometheus/prometheus.yml
 ```
 
 ---
 
-## Caddy
+# Minecraft
 
-Caddy listens on:
+Minecraft infrastructure is handled through Crafty Controller and a separate Minecraft Compose project.
+
+Crafty provides:
+
+- Minecraft server management;
+- web administration;
+- server files;
+- backups;
+- logs.
+
+The Minecraft container uses:
 
 ```text
-80/tcp
-443/tcp
+25565/tcp
 ```
 
-Caddy routes requests based on the hostname.
+The server is based on:
 
-Example:
-
-```caddyfile
-grafana.home.arpa {
-    reverse_proxy grafana:3000
-}
+```text
+Fabric
+Minecraft 1.21.1
 ```
 
-### Current local routes
-
-```caddyfile
-jellyfin.home.arpa {
-    reverse_proxy jellyfin:8096
-}
-
-grafana.home.arpa {
-    reverse_proxy grafana:3000
-}
-
-prometheus.home.arpa {
-    reverse_proxy prometheus:9090
-}
-
-pihole.home.arpa {
-    reverse_proxy pihole:80
-}
-
-immich.home.arpa {
-    reverse_proxy immich-server:2283
-}
-
-portainer.home.arpa {
-    reverse_proxy portainer:9000
-}
-
-crafty.home.arpa {
-    reverse_proxy https://crafty:8443 {
-        transport http {
-            tls_insecure_skip_verify
-        }
-
-        header_up Host {host}
-        header_up X-Forwarded-Proto {scheme}
-        header_up X-Forwarded-For {remote}
-    }
-}
-
-home.home.arpa {
-    reverse_proxy homepage:3000
-}
-
-uptime.home.arpa {
-    reverse_proxy uptime-kuma:3001
-}
-```
-
-Caddy and the target containers must be connected to the same Docker network.
+Minecraft data is stored separately from the container itself.
 
 ---
 
-## Security checklist
+# Portainer
 
-Before publishing a new service:
+Portainer is used to manage Docker containers and Compose stacks.
 
-- [ ] Is the service actually required to be reachable remotely?
-- [ ] Does it need LAN access, Tailscale access, or both?
-- [ ] Does the service require authentication?
-- [ ] Does the container publish a port through Docker?
-- [ ] Is the port inside the allowed development range?
-- [ ] Does the service expose sensitive data?
-- [ ] Are passwords and tokens stored outside Git?
-- [ ] Is router port forwarding disabled?
-- [ ] Is the service updated regularly?
-- [ ] Can the service be accessed through Caddy instead of exposing a direct port?
+Portainer stores its persistent data in:
 
-### Never commit
+```text
+/home/s623/docker/portainer/data
+```
+
+The Docker socket is mounted into Portainer:
+
+```text
+/var/run/docker.sock
+```
+
+Portainer-managed Compose definitions are stored internally under:
+
+```text
+/home/s623/docker/portainer/data/compose
+```
+
+These files represent the current Portainer stack configuration but are considered runtime management data rather than the desired Git repository structure.
+
+---
+
+# Docker Compose projects
+
+The infrastructure currently contains Compose definitions for:
+
+```text
+caddy
+monitoring
+jellyfin
+immich
+homepage
+uptime-kuma
+pihole
+portainer
+crafty
+snapotter
+docker-socket-proxy
+glances
+obsidian
+minecraft
+typing-svg
+```
+
+Some services are managed directly through Portainer, while others have local Compose files under `/home/s623/docker`.
+
+---
+
+# Docker Socket Proxy
+
+Glances does not access the Docker socket directly.
+
+Instead:
+
+```text
+Glances
+   │
+   ▼
+Docker Socket Proxy
+   │
+   ▼
+Docker socket
+```
+
+The Docker Socket Proxy exposes only the required read-oriented API endpoints.
+
+Write-oriented Docker operations such as:
+
+```text
+POST
+BUILD
+EXEC
+SERVICES
+VOLUMES
+NETWORKS
+```
+
+are disabled.
+
+This reduces the Docker API permissions available to monitoring services.
+
+---
+
+# Security
+
+The server is intended primarily for trusted local and private VPN access.
+
+Security principles:
+
+- services should not be exposed publicly unless required;
+- administrative interfaces should preferably be accessed through Tailscale or Caddy;
+- Docker-published ports should be minimized;
+- internal databases should remain on Docker networks;
+- passwords and API keys should be stored outside Git;
+- SSH uses public-key authentication;
+- root SSH login is disabled;
+- Docker Socket access should be restricted;
+- backups should be kept separately from the primary server.
+
+---
+
+# Secrets
+
+Secrets must never be committed to this repository.
+
+Examples:
 
 ```text
 .env
 .env.*
-secrets/
+stack.env
 *.pem
 *.key
 *.p12
 *.pfx
 id_*
-service-account*.json
-firebase-service-account*.json
 ```
 
-Private keys, API tokens, passwords, service-account files, database data and runtime files must not be stored in this repository.
-
----
-
-## Useful network commands
-
-Show network interfaces:
-
-```bash
-ip -br addr
-```
-
-Show listening TCP ports:
-
-```bash
-sudo ss -ltnp
-```
-
-Show listening UDP ports:
-
-```bash
-sudo ss -lunp
-```
-
-Check a specific port:
-
-```bash
-sudo ss -ltnp | grep ':8080'
-```
-
-Test a local HTTP service:
-
-```bash
-curl http://127.0.0.1:8080
-```
-
-Test through LAN IP:
-
-```bash
-curl http://192.168.0.105:8080
-```
-
-Test through Tailscale IP:
-
-```bash
-curl http://100.81.82.102:8080
-```
-
-Resolve a local hostname:
-
-```bash
-getent hosts portainer.home.arpa
-```
-
-Query Pi-hole DNS directly:
-
-```bash
-dig @192.168.0.105 portainer.home.arpa
-```
-
----
-
-## Repository rules
-
-This repository contains documentation and sanitized configuration examples.
-
-It must not contain:
-
-- private SSH keys;
-- passwords;
-- API tokens;
-- database credentials;
-- Firebase service-account files;
-- Tailscale authentication keys;
-- Docker volume data;
-- production secrets;
-- personal data.
-
-Configuration files should use environment variables for secrets.
+Compose configurations should use environment variables for sensitive values.
 
 Example:
 
 ```yaml
 environment:
-  POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-  JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET}
+  DB_PASSWORD: ${IMMICH_DB_PASSWORD}
 ```
+
+The actual value is stored in Portainer or another local secret-management mechanism.
+
+---
+
+# Backup strategy
+
+The most important data to back up consists of:
+
+```text
+Application configuration
+Databases
+Immich library
+Crafty server data
+Minecraft data
+Obsidian vaults
+Persistent Docker volumes
+Caddy data/configuration
+Pi-hole configuration
+Portainer configuration
+```
+
+Temporary/cache data can generally be recreated:
+
+```text
+Prometheus cache
+Jellyfin cache
+Immich ML model cache
+temporary container files
+```
+
+The Git repository stores **configuration and infrastructure definitions**, not application databases or large persistent datasets.
+
+---
+
+# Recovery concept
+
+A new server should be recoverable by:
+
+```text
+1. Install Fedora
+2. Install Docker
+3. Create Docker network `server`
+4. Restore required configuration
+5. Restore secrets
+6. Restore persistent application data
+7. Deploy Compose projects
+8. Configure Pi-hole DNS
+9. Configure Tailscale
+10. Configure firewalld
+11. Configure Caddy
+12. Verify service connectivity
+```
+
+The goal of this repository is to make the infrastructure reproducible without storing sensitive or large runtime data in Git.
+
+---
+
+# Useful commands
+
+### Containers
+
+```bash
+docker ps
+docker ps -a
+```
+
+### Compose projects
+
+```bash
+docker compose ls
+```
+
+### Networks
+
+```bash
+docker network ls
+docker network inspect server
+```
+
+### Volumes
+
+```bash
+docker volume ls
+```
+
+### Published ports
+
+```bash
+docker ps --format "table {{.Names}}\t{{.Ports}}"
+```
+
+### Listening TCP ports
+
+```bash
+sudo ss -ltnp
+```
+
+### Listening UDP ports
+
+```bash
+sudo ss -lunp
+```
+
+### Firewall
+
+```bash
+sudo firewall-cmd --get-active-zones
+sudo firewall-cmd --list-all-zones
+```
+
+### Tailscale
+
+```bash
+tailscale status
+```
+
+### DNS
+
+```bash
+dig @192.168.0.105 portainer.home.arpa
+```
+
+### Test local service
+
+```bash
+curl http://192.168.0.105:<port>
+```
+
+---
+
+# Repository structure
+
+The repository is intended to contain:
+
+```text
+home-server-infrastructure/
+├── README.md
+├── docker/
+│   ├── caddy/
+│   ├── monitoring/
+│   ├── jellyfin/
+│   ├── immich/
+│   ├── homepage/
+│   ├── uptime-kuma/
+│   ├── pihole/
+│   ├── portainer/
+│   ├── crafty/
+│   ├── snapotter/
+│   ├── docker-socket-proxy/
+│   ├── glances/
+│   ├── obsidian/
+│   └── minecraft/
+└── docs/
+    └── ...
+```
+
+The repository contains sanitized configuration and documentation.
+
+Persistent runtime data remains on the server or in separate backups.
