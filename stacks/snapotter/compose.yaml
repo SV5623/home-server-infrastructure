@@ -1,0 +1,16 @@
+services:
+  snapotter:
+    image: snapotter/snapotter:latest
+    container_name: snapotter
+    restart: unless-stopped
+    volumes:
+      - snapotter-data:/data
+    networks:
+      - server
+
+volumes:
+  snapotter-data:
+
+networks:
+  server:
+    external: true

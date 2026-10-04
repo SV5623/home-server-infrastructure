@@ -1,0 +1,26 @@
+services:
+  crafty:
+    image: registry.gitlab.com/crafty-controller/crafty-4:latest
+    container_name: crafty
+    restart: unless-stopped
+
+    environment:
+      TZ: Europe/Warsaw
+
+    ports:
+      - "8443:8443"
+      - "25565:25565"
+
+    volumes:
+      - /home/s623/docker/crafty/backups:/crafty/backups:Z
+      - /home/s623/docker/crafty/logs:/crafty/logs:Z
+      - /home/s623/docker/crafty/servers:/crafty/servers:Z
+      - /home/s623/docker/crafty/config:/crafty/app/config:Z
+      - /home/s623/docker/crafty/import:/crafty/import:Z
+
+    networks:
+      - server
+
+networks:
+  server:
+    external: true

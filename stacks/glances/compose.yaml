@@ -1,0 +1,18 @@
+services:
+  glances:
+    image: nicolargo/glances:latest-full
+    container_name: glances
+    restart: unless-stopped
+
+    pid: host
+
+    environment:
+      GLANCES_OPT: "-w"
+      DOCKER_HOST: "tcp://docker-socket-proxy:2375"
+
+    networks:
+      - server
+
+networks:
+  server:
+    external: true

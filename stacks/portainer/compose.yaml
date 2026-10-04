@@ -1,0 +1,26 @@
+services:
+  portainer:
+    image: portainer/portainer-ce:latest
+    container_name: portainer
+
+    expose:
+      - "9000"
+
+    privileged: true
+
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /home/s623/docker/portainer/data:/data:z
+
+    networks:
+      - server
+
+    restart: unless-stopped
+
+networks:
+  server:
+    external: true
+
+
+
+

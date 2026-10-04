@@ -1,0 +1,33 @@
+services:
+  pihole:
+    container_name: pihole
+    image: pihole/pihole:latest
+
+    ports:
+      - "192.168.0.105:53:53/tcp"
+      - "192.168.0.105:53:53/udp"
+
+    environment:
+      TZ: Europe/Warsaw
+      FTLCONF_webserver_api_password: ${PIHOLE_PASSWORD}
+      FTLCONF_dns_listeningMode: ALL
+      FTLCONF_dns_upstreams: "1.1.1.1;9.9.9.9"
+
+    volumes:
+      - /home/s623/docker/pihole/etc-pihole:/etc/pihole:z
+
+    networks:
+      - default
+      - server
+
+    restart: unless-stopped
+
+networks:
+  server:
+    external: true
+    name: server
+
+
+
+
+
