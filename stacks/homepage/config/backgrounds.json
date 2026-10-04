@@ -1,0 +1,23 @@
+{
+  "dark": [
+    "/images/dark/back-0.png",
+    "/images/dark/back-1.jpg",
+    "/images/dark/back-2.jpg",
+    "/images/dark/back-3.jpg",
+    "/images/dark/back-4.jpg",
+    "/images/dark/back-5.jpg",
+    "/images/dark/back-6.jpg",
+    "/images/dark/back-7.jpg",
+    "/images/dark/back-8.jpg",
+    "/images/dark/back-9.jpg",
+    "/images/dark/back-10.jpg"
+  ],
+  "light": [
+    "/images/light/back-0.jpg",
+    "/images/light/back-1.jpg",
+    "/images/light/back-2.jpeg",
+    "/images/light/back-3.jpg",
+    "/images/light/back-4.jpg",
+    "/images/light/back-5.jpg"
+  ]
+}

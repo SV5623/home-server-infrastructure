@@ -1,0 +1,109 @@
+
+    
+  
+---
+- Monitoring:
+    - Grafana:
+        icon: grafana.png
+        href: https://grafana.home.arpa
+        description: Моніторинг та дашборди
+        server: my-docker
+        container: grafana
+
+    - Prometheus:
+        icon: prometheus.png
+        href: https://prometheus.home.arpa
+        description: Метрики та targets
+        server: my-docker
+        container: prometheus
+
+    - Uptime Kuma:
+        icon: uptime-kuma.png
+        href: https://uptime.home.arpa
+        description: Моніторинг доступності
+        server: my-docker
+        container: uptime-kuma
+
+- Server:
+    - Infrastructure:
+        - Pi-hole:
+            icon: pi-hole.png
+            href: https://pihole.home.arpa
+            description: Локальний DNS
+            server: my-docker
+            container: pihole
+
+        - Portainer:
+            icon: portainer.png
+            href: https://portainer.home.arpa
+            description: Керування Docker та Stack'ами
+            server: my-docker
+            container: portainer
+
+    - Real-time:
+        - CPU:
+            icon: glances.png
+            href: https://glances.home.arpa
+            description: CPU usage
+            widget:
+              type: glances
+              url: http://glances:61208
+              version: 4
+              metric: cpu
+              refreshInterval: 5000
+
+        - RAM:
+            icon: glances.png
+            href: https://glances.home.arpa
+            description: Memory usage
+            widget:
+              type: glances
+              url: http://glances:61208
+              version: 4
+              metric: memory
+              refreshInterval: 5000
+
+    - Apps:
+        - Jellyfin:
+            icon: jellyfin.png
+            href: https://jellyfin.home.arpa
+            description: Медіасервер
+            server: my-docker
+            container: jellyfin
+
+        - Immich:
+            icon: immich.png
+            href: https://immich.home.arpa
+            description: Фото та відео
+            server: my-docker
+            container: immich_server
+
+        - Snapotter:
+            icon: snapotter.png
+            href: https://snapotter.home.arpa
+            description: Медіасервіс
+            server: my-docker
+            container: snapotter
+
+        - Obsidian:
+            icon: si-obsidian
+            href: https://obsidian.home.arpa
+            description: Web-доступ до Obsidian
+            server: my-docker
+            container: obsidian
+
+- Gaming:
+    - Crafty / Minecraft:
+        icon: crafty.png
+        href: https://crafty.home.arpa
+        description: Керування Minecraft-серверами
+        server: my-docker
+        container: crafty
+
+- Developer:
+    - GitHub:
+        icon: si-github
+        href: https://github.com/SV5623
+        description: Мої репозиторії
+
+

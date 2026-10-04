@@ -1,0 +1,27 @@
+/* Загальний вигляд груп */
+#page_container {
+  gap: 1.5rem;
+}
+
+/* Трохи компактніші картки */
+.service-card {
+  min-height: 0;
+}
+
+/* Окремий блок realtime-моніторингу */
+.group-Monitoring_realtime {
+  background: rgba(15, 23, 42, 0.35);
+  border: 1px solid rgba(148, 163, 184, 0.15);
+  border-radius: 16px;
+  padding: 1rem;
+}
+
+/* Заголовки груп */
+.group-header {
+  margin-bottom: 0.75rem;
+}
+
+/* Менші відступи між картками */
+.services-group {
+  gap: 0.75rem;
+}
