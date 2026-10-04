@@ -926,7 +926,6 @@ home-server-infrastructure/
 │   ├── docker-socket-proxy/
 │   ├── glances/
 │   ├── obsidian/
-│   ├── minecraft/
 │   ├── portainer/
 │   └── typing-svg/
 │
