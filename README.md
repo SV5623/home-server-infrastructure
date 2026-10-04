@@ -298,7 +298,6 @@ The server also has several Compose-specific networks for isolated projects.
 |---|---|
 | Homepage | Central service dashboard |
 | Crafty Controller | Minecraft server management |
-| Minecraft | Minecraft server |
 | Typing SVG | Self-hosted README typing service |
 
 ---
