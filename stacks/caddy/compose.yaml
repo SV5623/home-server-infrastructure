@@ -9,7 +9,7 @@ services:
       - "443:443"
 
     volumes:
-      - ./Caddyfile:/etc/caddy/Caddyfile:ro,Z
+      - /home/s623/docker/caddy/Caddyfile:/etc/caddy/Caddyfile:ro,Z
       - caddy_data:/data
       - caddy_config:/config
 
@@ -22,4 +22,4 @@ networks:
 
 volumes:
   caddy_data:
-  caddy_config
+  caddy_config:
