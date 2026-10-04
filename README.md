@@ -1,6 +1,10 @@
 # Home Server Infrastructure
 
-This repository is the Git-based source of truth for the home server. It is designed around the deployment flow:
+[🇬🇧 English](README.md) · [🇺🇦 Українська](README_UA.md)
+
+The Git-based source of truth for my home server infrastructure.
+
+Configuration is organized as independent Docker Stacks and managed through Portainer:
 
 ```text
 Git repository
@@ -11,6 +15,21 @@ Docker Stacks
       ↓
 Home server
 ```
+
+## Documentation
+
+- [Storage](docs/storage.md) — persistent data, volumes and external storage
+- [Backup](docs/backup.md) — backup priorities and what belongs outside Git
+- [Recovery](docs/recovery.md) — rebuilding the server and restoring services
+
+## Repository structure
+
+```text
+Configuration → stacks/
+Host/network docs → infrastructure/
+Operational docs → docs/
+```
+
 
 Each service is organized in its own stack directory under `stacks/` and can be deployed independently through Portainer.
 
@@ -45,7 +64,6 @@ home-server-infrastructure/
 │   ├── docker-socket-proxy/
 │   ├── glances/
 │   ├── obsidian/
-│   ├── minecraft/
 │   ├── portainer/
 │   └── typing-svg/
 └── .gitignore
@@ -616,7 +634,7 @@ Configuration:
 
 # Minecraft
 
-Minecraft infrastructure is handled through Crafty Controller and a separate Minecraft Compose project.
+Minecraft infrastructure is managed through Crafty Controller.
 
 Crafty provides:
 
@@ -687,7 +705,6 @@ snapotter
 docker-socket-proxy
 glances
 obsidian
-minecraft
 typing-svg
 ```
 
